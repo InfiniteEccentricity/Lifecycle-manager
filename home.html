@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rockwell Automation Software Lifecycle</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-shell">
+        <nav class="top-nav">
+            <div class="nav-group">
+            <div class="logo">
+            <a class="logo-link" href="https://www.rockwellautomation.com/en-us.html" target="_blank" rel="noopener noreferrer">
+                <img class="logo" src="logo.png" alt="Rockwell Automation">
+            </a>
+            </div>
+            <ul class="nav-links">
+                <li><div class="link-box"><a href="https://www.rockwellautomation.com/en-us/products.html" target="_blank" rel="noopener noreferrer" style="color: white;">Products</a></div></li>
+                <li><div class="link-box"><a href="https://www.rockwellautomation.com/en-us/capabilities.html" target="_blank" rel="noopener noreferrer" style="color: white;">Services</a></div></li>
+                <li><div class="link-box"><a href="https://www.rockwellautomation.com/en-us/industries.html" target="_blank" rel="noopener noreferrer" style="color: white;">Solutions & Industries</a></div></li>
+                <li><div class="link-box"><a href="https://www.rockwellautomation.com/en-us/support.html" target="_blank" rel="noopener noreferrer" style="color: white;">Support</a></div></li>
+                <li><div class="link-box"><a href="https://www.rockwellautomation.com/en-us/sales.html"  target="_blank" rel="noopener noreferrer" style="color: white;">Sales & Partners</a></div></li>
+            </ul>
+            </div>
+            <div class="login-btn">
+                <button class="navigate" onclick="window.location.href='https://www.rockwellautomation.com/account/'">Login</button>
+            </div>
+        </nav>
+        
+        <div class="content-layout">
+            <aside class="filter-panel">
+                <section class="panel-card filter-card">
+                    <p class="section-title">Select lifecycle status filter</p>
+                    <div class="filter-option">
+                        <input id="active" type="checkbox" name="lifecycle" value="active">
+                        <label for="active">Active</label>
+                    </div>
+                    <div class="filter-option">
+                        <input id="active_mature" type="checkbox" name="lifecycle" value="active_mature">
+                        <label for="active_mature">Active Mature</label>
+                    </div>
+                    <div class="filter-option">
+                        <input id="discontinued" type="checkbox" name="lifecycle" value="discontinued">
+                        <label for="discontinued">Discontinued</label>
+                    </div>
+                    <div class="filter-option">
+                        <input id="eol" type="checkbox" name="lifecycle" value="end_of_life">
+                        <label for="eol">End of Life</label>
+                    </div>
+                </section>
+                <section class="panel-card pagination-card">
+                    <div class="pagination-controls">
+                        <button class="navigate" id="prev-btn" onclick="changePage(-1)">Previous</button>
+                        <span class="page-chip" id="page-indicator">Page 1 of 1</span>
+                        <button class="navigate" id="next-btn" onclick="changePage(1)">Next</button>
+                    </div>
+                </section>
+                <section class="panel-card filter-card">
+                    <p class="section-title">Starts with</p>
+                    <div class="filter-text">
+                        <input type="text" id="filterInput" placeholder="Catalog number or name">
+                    </div>
+                    <div class="text-submit">
+                        <button id="startsubmit" class="navigate button-compact">Filter</button>
+                        <button id="clear" class="navigate button-compact button-secondary">Clear</button>
+                    </div>
+                </section>
+                <section class="panel-card page-elements">
+                    <div class="download">
+                        <button class="navigate" id="downloadbtn" title="Download the lifecycle details of the products on screen">Export</button>
+                    </div>
+                    <label for="page-select">Items in a page:</label>
+                    <select id="page-select" name="page-select">
+                        <option value="20">20</option>
+                        <option value="40">40</option>
+                        <option value="80">80</option>
+                        <option value="100">100</option>
+                    </select>
+                </section>
+            </aside>
+            <main class="main-content">
+                <section class="panel-card table-card">
+                    <table id="product-table">
+                        <thead>
+                            <tr>
+                                <th>Catalog Number</th>
+                                <th>Name</th>
+                                <th>Lifecycle Status</th>
+                                <th>Compare</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body"></tbody>
+                    </table>
+                </section>
+                <section class="panel-card comparison-panel" id="compHeaders">
+                    <table id="comparison-table">
+                        <thead id="compHead"></thead>
+                        <tbody id="comparison"></tbody>
+                    </table>
+                    <div class="comparison-toolbar" id="comparison-toolbar"></div>
+                </section>
+            </main>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
