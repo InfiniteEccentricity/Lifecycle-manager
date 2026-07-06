@@ -72,14 +72,12 @@ document.querySelectorAll('input[name="lifecycle"]').forEach(checkbox => {
     });
 });
 const comparisonFields = [
-    { label: "Title", property: "title" },
     { label: "Type", property: "type" },
     { label: "Brand", property: "brand" },
     { label: "Replacement Category", property: "replacementCategory" },
     { label: "Replacement Text", property: "replacementText" },
     { label: "Catalog Number", property: "catalogNumber" },
     { label: "Lifecycle Status", property: "productLifeCycleStatus" },
-    { label: "Description", property: "description" },
     { label: "Discontinued Date", property: "discontinuedDate" }
 ];
 
@@ -131,8 +129,8 @@ async function loadCSVData() {
         await renderTable();
 
     //     allProducts.forEach(product => fetchLifecycleStatus(product.catalog));
-    //     allProducts.forEach(async (product) => {
-    // Object.assign(product, await fetchLifecycleStatus(product.catalog));});
+        allProducts.forEach(async (product) => {
+    Object.assign(product, await fetchLifecycleStatus(product.catalog));});
     } catch (error) {
         console.error('Error loading csv file: ', error);
     }
@@ -281,24 +279,51 @@ async function renderTable() {
     const endIndex = startIndex + itemsPerPage;
     const pageItems = filteredProducts.slice(startIndex, endIndex);
 
-    const pageRows = await Promise.all(pageItems.map(async product => ({
-        ...product,
-        ...await fetchLifecycleStatus(product.catalog)
-    })));
+    // const pageRows = await Promise.all(pageItems.map(async product => ({
+    //     ...product,
+    //     ...await fetchLifecycleStatus(product.catalog)
+    // })));
 
     tableBody.innerHTML = '';
 
-    pageRows.forEach(product => {
-        const rowHTML = `
-        <tr>
-            <td>${product.catalog}</td>
-            <td><a href="${product.productURL}" target="_blank" rel="noopener noreferrer" class="productURL">${product.title}</a></td>
-            <td data-status="${product.lifecycleStatus}">${product.lifecycleStatus}</td>
-            <td><button onclick="renderComparisonTable('${product.catalog}')" class="navigate compare-button">Compare</button></td>
-        </tr>`;
-        tableBody.insertAdjacentHTML('beforeend', rowHTML);
-    });
+    // pageRows.forEach(product => {
+    //     const rowHTML = `
+    //     <tr>
+    //         <td>${product.catalog}</td>
+    //         <td><a href="${product.productURL}" target="_blank" rel="noopener noreferrer" class="productURL">${product.title}</a></td>
+    //         <td data-status="${product.lifecycleStatus}">${product.lifecycleStatus}</td>
+    //         <td><button onclick="renderComparisonTable('${product.catalog}')" class="navigate compare-button">Compare</button></td>
+    //     </tr>`;
+    //     tableBody.insertAdjacentHTML('beforeend', rowHTML);
+    // });
 
+    pageItems.forEach(product => {
+    const row = `
+    <tr id="row-${product.catalog}">
+        <td>${product.catalog}</td>
+        <td>Loading...</td>
+        <td>Loading...</td>
+        <td>
+            <button onclick="renderComparisonTable('${product.catalog}')" class="navigate compare-button">
+                Compare
+            </button>
+        </td>
+    </tr>
+    `;
+
+    tableBody.insertAdjacentHTML("beforeend", row);
+
+    fetchLifecycleStatus(product.catalog)
+        .then(data => {
+            const row = document.getElementById(`row-${product.catalog}`);
+            if (!row) return;
+
+            row.cells[1].innerHTML =
+                `<a href="${data.productURL}" target="_blank" rel="noopener noreferrer" class="productURL">${data.title}</a>`;
+
+            row.cells[2].innerText = data.lifecycleStatus;
+        });
+});
     updatePaginationControls();
 }
 
@@ -316,10 +341,8 @@ function changePage(direction) {
 async function filter(selectedValues) {
     const textQuery = filterInput.value.trim().toLowerCase();
     
-    // 1. BASELINE: Start from the complete list of CSV products
     let tempProducts = [...allProducts];
 
-    // 2. CASE A: Text search is active -> Filter globally across all data
     if (textQuery !== "") {
         tempProducts = tempProducts.filter(product => 
             (product.catalog && product.catalog.toLowerCase().startsWith(textQuery)) || 
@@ -343,9 +366,12 @@ async function filter(selectedValues) {
     } 
     else {
         if (selectedValues && selectedValues.length > 0) {
-            const startIndex = (currentPage - 1) * itemsPerPage;
-            const endIndex = startIndex + Number(itemsPerPage);
+            // const startIndex = (currentPage - 1) * itemsPerPage;
+            // const endIndex = startIndex + Number(itemsPerPage);
             
+            const startIndex = 0;
+            const endIndex = tempProducts.lengthl;
+
             let pageProducts = tempProducts.slice(startIndex, endIndex);
 
             const lifecycleResults = await Promise.all(pageProducts.map(async product => {
