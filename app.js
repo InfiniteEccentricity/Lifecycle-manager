@@ -15,6 +15,10 @@ const downloadTable = document.getElementById('downloadbtn');
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function bindComparisonDownloadButton() {
     const compDownload = document.getElementById('compDownload');
     if (!compDownload) {
@@ -129,8 +133,27 @@ async function loadCSVData() {
         await renderTable();
 
     //     allProducts.forEach(product => fetchLifecycleStatus(product.catalog));
-        allProducts.forEach(async (product) => {
-    Object.assign(product, await fetchLifecycleStatus(product.catalog));});
+    //     allProducts.forEach(async (product) => {
+    // Object.assign(product, await fetchLifecycleStatus(product.catalog));});
+    const BATCH_SIZE = 20;
+    const DELAY = 100; // ms
+
+    (async () => {
+        for (let i = 0; i < allProducts.length; i += BATCH_SIZE) {
+
+            const batch = allProducts.slice(i, i + BATCH_SIZE);
+
+            await Promise.all(
+                batch.map(async product => {
+                    Object.assign(product, await fetchLifecycleStatus(product.catalog));
+                })
+            );
+
+            if (i + BATCH_SIZE < allProducts.length) {
+                await sleep(DELAY);
+            }
+        }
+    })();
     } catch (error) {
         console.error('Error loading csv file: ', error);
     }
@@ -320,8 +343,8 @@ async function renderTable() {
 
             row.cells[1].innerHTML =
                 `<a href="${data.productURL}" target="_blank" rel="noopener noreferrer" class="productURL">${data.title}</a>`;
-
-            row.cells[2].innerText = data.lifecycleStatus;
+            row.cells[2].setAttribute("data-status", data.lifecycleStatus);
+            row.cells[2].textContent = data.lifecycleStatus;
         });
 });
     updatePaginationControls();
@@ -382,6 +405,7 @@ async function filter(selectedValues) {
             filteredProducts = lifecycleResults.filter(product =>
                 selectedValues.includes((product.lifecycleStatus || '').toLowerCase())
             );
+            currentPage = 1;
             
         } else {
             filteredProducts = tempProducts;
