@@ -259,7 +259,7 @@ async function fetchFullDescription(catalogNumber){
 }
 
 async function renderComparisonTable(){
-    if (selectedProduct.length < maxSelection){
+    if (checkedBoxes.length < maxSelection){
         alert("Select atleast two products!");
     }
     const comparisonToolbar = document.getElementById('comparison-toolbar');
@@ -294,6 +294,10 @@ async function renderComparisonTable(){
             <td>${rightValue}</td>
         `
         tableBody.appendChild(row);
+    });
+    window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: 'smooth'
     });
     let downBtn = document.getElementById('compDownload');
     if (!downBtn){
@@ -350,7 +354,6 @@ async function renderTable() {
         <td>
             <label class="container">
             <input type="checkbox" class="product-checkbox" data-catalog="${product.catalog}">
-            <span class="checkmark"></span>
             </label>
         </td>
     </tr>
