@@ -6,6 +6,7 @@ let selectedProduct = [];
 let filteredProducts = [];
 let searchPrefix = "";
 let selectedLifecycleFilters = [];
+let checkedBoxes = [];
 const filterButton = document.getElementById('startsubmit');
 const filterInput = document.getElementById('filterInput');
 const clearButton = document.getElementById('clear');
@@ -14,6 +15,10 @@ let itemsPerPage = 20;
 const downloadTable = document.getElementById('downloadbtn');
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 function bindComparisonDownloadButton() {
     const compDownload = document.getElementById('compDownload');
@@ -29,6 +34,22 @@ function bindComparisonDownloadButton() {
         exportTabletoCSV('comparison', `${selectedProduct[0]?.['title']??"N/A"}_${selectedProduct[1]?.['title']??"N/A"}_comparison.csv`);
     };
 }
+const tableBody = document.getElementById('table-body');
+const maxSelection = 2;
+tableBody.addEventListener('change', (event) => {
+    if (event.target.classList.contains('product-checkbox')){
+        const currentBox = event.target;
+        const catalogId = currentBox.getAttribute('data-catalog');
+    if (currentBox.checked){
+        fetchFullDescription(catalogId);
+        checkedBoxes.push(currentBox);
+    }
+    if (checkedBoxes.length > maxSelection){
+        const oldestBox = checkedBoxes.shift();
+        oldestBox.checked = false;
+    }
+}
+});
 
 downloadTable.addEventListener('click', () => {
     console.log('Button clicked');
@@ -72,14 +93,12 @@ document.querySelectorAll('input[name="lifecycle"]').forEach(checkbox => {
     });
 });
 const comparisonFields = [
-    { label: "Title", property: "title" },
     { label: "Type", property: "type" },
     { label: "Brand", property: "brand" },
     { label: "Replacement Category", property: "replacementCategory" },
     { label: "Replacement Text", property: "replacementText" },
     { label: "Catalog Number", property: "catalogNumber" },
     { label: "Lifecycle Status", property: "productLifeCycleStatus" },
-    { label: "Description", property: "description" },
     { label: "Discontinued Date", property: "discontinuedDate" }
 ];
 
@@ -133,6 +152,25 @@ async function loadCSVData() {
     //     allProducts.forEach(product => fetchLifecycleStatus(product.catalog));
     //     allProducts.forEach(async (product) => {
     // Object.assign(product, await fetchLifecycleStatus(product.catalog));});
+    const BATCH_SIZE = 20;
+    const DELAY = 100; // ms
+
+    (async () => {
+        for (let i = 0; i < allProducts.length; i += BATCH_SIZE) {
+
+            const batch = allProducts.slice(i, i + BATCH_SIZE);
+
+            await Promise.all(
+                batch.map(async product => {
+                    Object.assign(product, await fetchLifecycleStatus(product.catalog));
+                })
+            );
+
+            if (i + BATCH_SIZE < allProducts.length) {
+                await sleep(DELAY);
+            }
+        }
+    })();
     } catch (error) {
         console.error('Error loading csv file: ', error);
     }
@@ -220,8 +258,10 @@ async function fetchFullDescription(catalogNumber){
     }
 }
 
-async function renderComparisonTable(catalogNumber){
-    await fetchFullDescription(catalogNumber);
+async function renderComparisonTable(){
+    if (selectedProduct.length < maxSelection){
+        alert("Select atleast two products!");
+    }
     const comparisonToolbar = document.getElementById('comparison-toolbar');
     const tableBody = document.getElementById('comparison');
     tableBody.innerHTML=`
@@ -232,8 +272,8 @@ async function renderComparisonTable(catalogNumber){
         </tr>
     `;
     const tableHead = document.getElementById('compHead');
-    const leftHead = selectedProduct[0]?.['title']??"N/A";
-    const rightHead = selectedProduct[1]?.['title']??"N/A";
+    const leftHead = selectedProduct[0]?.['title']??"Loading..";
+    const rightHead = selectedProduct[1]?.['title']??"Loading..";
     tableHead.innerHTML=`
     <tr>
         <th> </th>
@@ -281,24 +321,51 @@ async function renderTable() {
     const endIndex = startIndex + itemsPerPage;
     const pageItems = filteredProducts.slice(startIndex, endIndex);
 
-    const pageRows = await Promise.all(pageItems.map(async product => ({
-        ...product,
-        ...await fetchLifecycleStatus(product.catalog)
-    })));
+    // const pageRows = await Promise.all(pageItems.map(async product => ({
+    //     ...product,
+    //     ...await fetchLifecycleStatus(product.catalog)
+    // })));
 
     tableBody.innerHTML = '';
 
-    pageRows.forEach(product => {
-        const rowHTML = `
-        <tr>
-            <td>${product.catalog}</td>
-            <td><a href="${product.productURL}" target="_blank" rel="noopener noreferrer" class="productURL">${product.title}</a></td>
-            <td data-status="${product.lifecycleStatus}">${product.lifecycleStatus}</td>
-            <td><button onclick="renderComparisonTable('${product.catalog}')" class="navigate compare-button">Compare</button></td>
-        </tr>`;
-        tableBody.insertAdjacentHTML('beforeend', rowHTML);
-    });
+    // pageRows.forEach(product => {
+    //     const rowHTML = `
+    //     <tr>
+    //         <td>${product.catalog}</td>
+    //         <td><a href="${product.productURL}" target="_blank" rel="noopener noreferrer" class="productURL">${product.title}</a></td>
+    //         <td data-status="${product.lifecycleStatus}">${product.lifecycleStatus}</td>
+    //         <td><button onclick="renderComparisonTable('${product.catalog}')" class="navigate compare-button">Compare</button></td>
+    //     </tr>`;
+    //     tableBody.insertAdjacentHTML('beforeend', rowHTML);
+    // });
+// <button onclick="renderComparisonTable('${product.catalog}')" class="navigate compare-button">
+            //     Compare
+            // </button>
+    pageItems.forEach(product => {
+    const row = `
+    <tr id="row-${product.catalog}">
+        <td>${product.catalog}</td>
+        <td>Loading...</td>
+        <td>Loading...</td>
+        <td>
+            <input type="checkbox" class="product-checkbox" data-catalog="${product.catalog}">
+        </td>
+    </tr>
+    `;
 
+    tableBody.insertAdjacentHTML("beforeend", row);
+
+    fetchLifecycleStatus(product.catalog)
+        .then(data => {
+            const row = document.getElementById(`row-${product.catalog}`);
+            if (!row) return;
+
+            row.cells[1].innerHTML =
+                `<a href="${data.productURL}" target="_blank" rel="noopener noreferrer" class="productURL">${data.title}</a>`;
+            row.cells[2].setAttribute("data-status", data.lifecycleStatus);
+            row.cells[2].textContent = data.lifecycleStatus;
+        });
+});
     updatePaginationControls();
 }
 
@@ -316,10 +383,8 @@ function changePage(direction) {
 async function filter(selectedValues) {
     const textQuery = filterInput.value.trim().toLowerCase();
     
-    // 1. BASELINE: Start from the complete list of CSV products
     let tempProducts = [...allProducts];
 
-    // 2. CASE A: Text search is active -> Filter globally across all data
     if (textQuery !== "") {
         tempProducts = tempProducts.filter(product => 
             (product.catalog && product.catalog.toLowerCase().startsWith(textQuery)) || 
@@ -343,9 +408,12 @@ async function filter(selectedValues) {
     } 
     else {
         if (selectedValues && selectedValues.length > 0) {
-            const startIndex = (currentPage - 1) * itemsPerPage;
-            const endIndex = startIndex + Number(itemsPerPage);
+            // const startIndex = (currentPage - 1) * itemsPerPage;
+            // const endIndex = startIndex + Number(itemsPerPage);
             
+            const startIndex = 0;
+            const endIndex = tempProducts.lengthl;
+
             let pageProducts = tempProducts.slice(startIndex, endIndex);
 
             const lifecycleResults = await Promise.all(pageProducts.map(async product => {
@@ -356,6 +424,7 @@ async function filter(selectedValues) {
             filteredProducts = lifecycleResults.filter(product =>
                 selectedValues.includes((product.lifecycleStatus || '').toLowerCase())
             );
+            currentPage = 1;
             
         } else {
             filteredProducts = tempProducts;

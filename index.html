@@ -80,6 +80,9 @@
                 </section>
             </aside>
             <main class="main-content">
+                <button onclick="renderComparisonTable('${product.catalog}')" class="navigate compare-button" style="margin: 0px;">
+                 Compare
+                    </button>
                 <section class="panel-card table-card">
                     <table id="product-table">
                         <thead>
@@ -87,7 +90,7 @@
                                 <th>Catalog Number</th>
                                 <th>Name</th>
                                 <th>Lifecycle Status</th>
-                                <th>Compare</th>
+                                <th>Add to compare</th>
                             </tr>
                         </thead>
                         <tbody id="table-body"></tbody>
