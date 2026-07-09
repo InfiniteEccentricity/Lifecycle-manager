@@ -348,7 +348,10 @@ async function renderTable() {
         <td>Loading...</td>
         <td>Loading...</td>
         <td>
+            <label class="container">
             <input type="checkbox" class="product-checkbox" data-catalog="${product.catalog}">
+            <span class="checkmark"></span>
+            </label>
         </td>
     </tr>
     `;
