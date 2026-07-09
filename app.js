@@ -6,6 +6,7 @@ let selectedProduct = [];
 let filteredProducts = [];
 let searchPrefix = "";
 let selectedLifecycleFilters = [];
+let checkedBoxes = [];
 const filterButton = document.getElementById('startsubmit');
 const filterInput = document.getElementById('filterInput');
 const clearButton = document.getElementById('clear');
@@ -33,6 +34,22 @@ function bindComparisonDownloadButton() {
         exportTabletoCSV('comparison', `${selectedProduct[0]?.['title']??"N/A"}_${selectedProduct[1]?.['title']??"N/A"}_comparison.csv`);
     };
 }
+const tableBody = document.getElementById('table-body');
+const maxSelection = 2;
+tableBody.addEventListener('change', (event) => {
+    if (event.target.classList.contains('product-checkbox')){
+        const currentBox = event.target;
+        const catalogId = currentBox.getAttribute('data-catalog');
+    if (currentBox.checked){
+        fetchFullDescription(catalogId);
+        checkedBoxes.push(currentBox);
+    }
+    if (checkedBoxes.length > maxSelection){
+        const oldestBox = checkedBoxes.shift();
+        oldestBox.checked = false;
+    }
+}
+});
 
 downloadTable.addEventListener('click', () => {
     console.log('Button clicked');
@@ -241,8 +258,10 @@ async function fetchFullDescription(catalogNumber){
     }
 }
 
-async function renderComparisonTable(catalogNumber){
-    await fetchFullDescription(catalogNumber);
+async function renderComparisonTable(){
+    if (selectedProduct.length < maxSelection){
+        alert("Select atleast two products!");
+    }
     const comparisonToolbar = document.getElementById('comparison-toolbar');
     const tableBody = document.getElementById('comparison');
     tableBody.innerHTML=`
@@ -253,8 +272,8 @@ async function renderComparisonTable(catalogNumber){
         </tr>
     `;
     const tableHead = document.getElementById('compHead');
-    const leftHead = selectedProduct[0]?.['title']??"N/A";
-    const rightHead = selectedProduct[1]?.['title']??"N/A";
+    const leftHead = selectedProduct[0]?.['title']??"Loading..";
+    const rightHead = selectedProduct[1]?.['title']??"Loading..";
     tableHead.innerHTML=`
     <tr>
         <th> </th>
@@ -319,7 +338,9 @@ async function renderTable() {
     //     </tr>`;
     //     tableBody.insertAdjacentHTML('beforeend', rowHTML);
     // });
-
+// <button onclick="renderComparisonTable('${product.catalog}')" class="navigate compare-button">
+            //     Compare
+            // </button>
     pageItems.forEach(product => {
     const row = `
     <tr id="row-${product.catalog}">
@@ -327,9 +348,7 @@ async function renderTable() {
         <td>Loading...</td>
         <td>Loading...</td>
         <td>
-            <button onclick="renderComparisonTable('${product.catalog}')" class="navigate compare-button">
-                Compare
-            </button>
+            <input type="checkbox" class="product-checkbox" data-catalog="${product.catalog}">
         </td>
     </tr>
     `;
